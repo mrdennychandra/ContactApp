@@ -1,10 +1,10 @@
 package id.ac.unikom.contactapp;
 
+import android.Manifest;
 import android.content.Intent;
 import android.os.Bundle;
 
 import com.google.android.material.floatingactionbutton.FloatingActionButton;
-import com.google.android.material.snackbar.Snackbar;
 
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.widget.Toolbar;
@@ -20,11 +20,15 @@ import java.util.List;
 import id.ac.unikom.contactapp.adapter.ContactAdapter;
 import id.ac.unikom.contactapp.db.AppDatabase;
 import id.ac.unikom.contactapp.model.Contact;
+import pub.devrel.easypermissions.AfterPermissionGranted;
+import pub.devrel.easypermissions.EasyPermissions;
 
 public class MainActivity extends AppCompatActivity {
 
     RecyclerView list;
     ContactAdapter contactAdapter;
+    //range is from 0 to 65535.
+    private static final int RC_LOCATION = 100;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -55,6 +59,7 @@ public class MainActivity extends AppCompatActivity {
         // Array lapor mapping ke row_layout
         contactAdapter = new ContactAdapter(this,lapors);
         list.setAdapter(contactAdapter);
+        requestPermission();
     }
 
     @Override
@@ -77,5 +82,25 @@ public class MainActivity extends AppCompatActivity {
         }
 
         return super.onOptionsItemSelected(item);
+    }
+
+    @Override
+    public void onRequestPermissionsResult(int requestCode, String[] permissions, int[] grantResults) {
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults);
+
+        // Forward results to EasyPermissions
+        EasyPermissions.onRequestPermissionsResult(requestCode, permissions, grantResults, this);
+    }
+
+    @AfterPermissionGranted(RC_LOCATION)
+    private void requestPermission() {
+        String[] perms = {Manifest.permission.ACCESS_FINE_LOCATION};
+        if (EasyPermissions.hasPermissions(this, perms)) {
+            // Already have permission
+        } else {
+            // Do not have permissions, request them now
+            EasyPermissions.requestPermissions(this, "Location Permission",
+                    RC_LOCATION, perms);
+        }
     }
 }

@@ -2,9 +2,11 @@ package id.ac.unikom.contactapp;
 
 import androidx.appcompat.app.AppCompatActivity;
 
+import android.Manifest;
 import android.app.DatePickerDialog;
 import android.app.ProgressDialog;
 import android.content.Intent;
+import android.location.Location;
 import android.os.Bundle;
 import android.view.View;
 import android.widget.ArrayAdapter;
@@ -14,26 +16,34 @@ import android.widget.EditText;
 import android.widget.RadioButton;
 import android.widget.RadioGroup;
 import android.widget.Spinner;
+import android.widget.Toast;
+
+import com.example.easywaylocation.EasyWayLocation;
+import com.example.easywaylocation.Listener;
 
 import java.util.Calendar;
 
 import id.ac.unikom.contactapp.db.AppDatabase;
 import id.ac.unikom.contactapp.model.Contact;
+import pub.devrel.easypermissions.AfterPermissionGranted;
+import pub.devrel.easypermissions.EasyPermissions;
 
-public class FormActivity extends AppCompatActivity {
+public class FormActivity extends AppCompatActivity implements Listener {
 
     private EditText txtNama, txtEmail, txtTelpon, txtTglLahir;
     private Spinner spPekerjaan;
     private RadioGroup rbJkGroup;
-    private RadioButton rbJk,rbL,rbP;
+    private RadioButton rbJk, rbL, rbP;
     private int mYear, mMonth, mDay, mHour, mMinute;
     private Button btnSave;
     String tglLahirDb = "";
     private Contact contact;
+    EasyWayLocation easyWayLocation;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        easyWayLocation = new EasyWayLocation(this, false, false, this);
         setContentView(R.layout.activity_form);
         txtNama = (EditText) findViewById(R.id.txt_nama);
         txtEmail = (EditText) findViewById(R.id.txt_email);
@@ -44,7 +54,7 @@ public class FormActivity extends AppCompatActivity {
         rbL = (RadioButton) findViewById(R.id.rb_l);
         rbP = (RadioButton) findViewById(R.id.rb_p);
         btnSave = (Button) findViewById(R.id.btn_save);
-        String[] pekerjaan = {"Mahasiswa","Dosen","Karyawan"};
+        String[] pekerjaan = {"Mahasiswa", "Dosen", "Karyawan"};
         ArrayAdapter<String> adapter = new ArrayAdapter<String>(FormActivity.this,
                 android.R.layout.simple_spinner_dropdown_item, pekerjaan);
         adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
@@ -52,7 +62,7 @@ public class FormActivity extends AppCompatActivity {
 
         Intent intent = getIntent();
         contact = (Contact) intent.getSerializableExtra("contact");
-        if(contact != null){
+        if (contact != null) {
             txtNama.setText(contact.nama);
             txtEmail.setText(contact.email);
             txtTelpon.setText(contact.telpon);
@@ -60,12 +70,12 @@ public class FormActivity extends AppCompatActivity {
             tglLahirDb = contact.tgllahir;
             if (contact.jeniskelamin.equalsIgnoreCase("L")) {
                 rbL.setSelected(true);
-            } else{
+            } else {
                 rbP.setSelected(true);
             }
             //set selected
-            for(int i=0;i<pekerjaan.length;i++){
-                if(contact.pekerjaan.equals(pekerjaan[i])){
+            for (int i = 0; i < pekerjaan.length; i++) {
+                if (contact.pekerjaan.equals(pekerjaan[i])) {
                     spPekerjaan.setSelection(i);
                 }
             }
@@ -128,9 +138,50 @@ public class FormActivity extends AppCompatActivity {
                     contact.tgllahir = tglLahirDb;
                     AppDatabase.getInstance(getApplicationContext()).contactDao().update(contact);
                 }
-                Intent intent1  = new Intent(FormActivity.this,MainActivity.class);
+                Intent intent1 = new Intent(FormActivity.this, MainActivity.class);
                 startActivity(intent1);
             }
         });
+
+    }
+
+    public void locationOn() {
+        Toast.makeText(this, "Location ON", Toast.LENGTH_SHORT).show();
+    }
+
+    @Override
+    public void currentLocation(Location location) {
+        StringBuilder data = new StringBuilder();
+        data.append(location.getLatitude());
+        data.append(" , ");
+        data.append(location.getLongitude());
+        Toast.makeText(this, data.toString(), Toast.LENGTH_SHORT).show();
+    }
+
+    @Override
+    public void locationCancelled() {
+
+    }
+
+    @Override
+    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+        super.onActivityResult(requestCode, resultCode, data);
+        switch (requestCode) {
+            case EasyWayLocation.LOCATION_SETTING_REQUEST_CODE:
+                easyWayLocation.onActivityResult(resultCode);
+                break;
+        }
+    }
+
+    @Override
+    protected void onResume() {
+        super.onResume();
+        easyWayLocation.startLocation();
+    }
+
+    @Override
+    protected void onPause() {
+        super.onPause();
+        easyWayLocation.endUpdates();
     }
 }

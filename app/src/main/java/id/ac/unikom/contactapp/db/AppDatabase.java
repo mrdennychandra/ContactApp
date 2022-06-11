@@ -7,6 +7,9 @@ import androidx.room.Room;
 import androidx.room.RoomDatabase;
 import androidx.room.TypeConverters;
 
+import net.sqlcipher.database.SQLiteDatabase;
+import net.sqlcipher.database.SupportFactory;
+
 import id.ac.unikom.contactapp.model.Contact;
 
 
@@ -29,10 +32,13 @@ public abstract class AppDatabase extends RoomDatabase {
     }
 
     private static AppDatabase create(final Context context) {
+        SupportFactory factory = new SupportFactory(SQLiteDatabase
+                .getBytes("MySecretKey".toCharArray()));
         return Room.databaseBuilder(context, AppDatabase.class,
                 "contact.db")
                 .fallbackToDestructiveMigration()
                 .allowMainThreadQueries()
+                .openHelperFactory(factory)
                 .build();
     }
 }
